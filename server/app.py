@@ -14,9 +14,22 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
-@app.route('/messages')
+@app.route('/messages', methods = ['GET'])
 def messages():
-    return ''
+    messages = Message.query.order_by(Message.created_at.asc()).all()
+    return jsonify([message.to_dict() for message in messages])
+
+@app.post('/messages')
+def post_a_message():
+    data = request.json
+    try:
+        new_message = Message(body=data["body"], username=data["username"])
+        db.session.add(new_message)
+        db.session.commit()
+
+        return jsonify(new_message.to_dict()), 201
+    except Exception as exception:
+        return jsonify({"error":str(exception)}), 400
 
 @app.route('/messages/<int:id>')
 def messages_by_id(id):
